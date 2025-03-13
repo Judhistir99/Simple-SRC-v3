@@ -214,7 +214,7 @@ async def process_batch(C, m):
         M = S + i
         msg = await J(C, Y, I, M, link_type)
         if msg:
-            res = await V(C, Y, msg, Z[U]["did"], link type, U, (N, i+1))
+            res = await V(C, Y, msg, Z[U]["did"], link_type, U, (N, i+1))
             await pt.edit(f"{i+1}/{N}: {res}")
             if "Done" in res: R += 1
         else:
