@@ -1,4 +1,4 @@
-# Simple-SRC-v3
+# JSimpleSRCv3
 
 Simplest Save Restricted Content Bot for self use.
 
