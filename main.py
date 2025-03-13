@@ -121,7 +121,7 @@ async def V(C, U, m, d, link_type, u, batch_progress):
                 await m.copy(chat_id=d)
                 return add_emojis("Copied.")
         elif m.text:
-            await (C.send_message(d, text=add_emojis(m.text.markdown)) if link type == "private" else m.copy(chat_id=d))
+            await (C.send_message(d, text=add_emojis(m.text.markdown)) if link_type == "private" else m.copy(chat_id=d))
             return add_emojis("Sent.")
     except Exception as e:
         return f"Error: {e}"
@@ -144,6 +144,22 @@ async def N(C, m: M):
         await m.reply_text(add_emojis("Cancelling..."))
     else:
         await m.reply_text(add_emojis("No active task."))
+
+@X.on_message(F.command("usage"))
+async def usage(C, m: M):
+    # Sample data for resource utilization
+    cpu_usage = 50  # in percentage
+    memory_usage = 1024  # in MB
+    disk_usage = 2048  # in MB
+
+    usage_text = (
+        f"**Resource Utilization:**\n"
+        f"CPU Usage: {cpu_usage}%\n"
+        f"Memory Usage: {memory_usage} MB\n"
+        f"Disk Usage: {disk_usage} MB\n"
+    )
+    
+    await m.reply_text(add_emojis(usage_text))
 
 @X.on_message(F.command("restart"))
 async def restart(C, m: M):
