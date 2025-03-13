@@ -26,7 +26,7 @@ A simplest Telegram Save Restricted bot repo (just 100 lines) that helps batch p
    - `API_ID` – Your Telegram API ID
    - `API_HASH` – Your Telegram API Hash
    - `BOT_TOKEN` – Your Bot Token
-   - `SESSION` – Your Pyrogram session string
+   - `SESSION` – Your Pyrogram session string Can be generated from - [Pyrogram Session Generator](https://telegram.tools/session-string-generator#pyrogram,user)
 
 ## Running the Bot
 ```sh
