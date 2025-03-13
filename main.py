@@ -241,7 +241,8 @@ async def handle_text_message(client, message: Message):
             if msg:
                 result = await handle_media(client, user_client, msg, destination_chat_id, link_type, user_id, (num_messages, i+1))
                 await progress_message.edit(f"{i+1}/{num_messages}: {result}")
-                if "Done" in result: successful_tasks += 1
+                if result and "Done" in result:
+                    successful_tasks += 1
             else:
                 await message.reply_text(f"{message_id} not found.")
         
