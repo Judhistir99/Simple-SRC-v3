@@ -244,7 +244,8 @@ async def H(C, m: M):
             if msg:
                 res = await V(C, Y, msg, D, link type, U, (N, i+1))
                 await pt.edit(f"{i+1}/{N}: {res}")
-                if "Done" in res: R += 1
+                if res and "Done" in res: 
+                    R += 1
             else:
                 await m.reply_text(f"{M} not found.")
         
