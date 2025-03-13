@@ -42,6 +42,8 @@ This bot helps you save restricted content from Telegram channels and chats. It 
     BOT_TOKEN = 'your_bot_token'
     SESSION = 'your_session_string'
     ```
+    - [Pyrogram Session Generator](https://telegram.tools/session-string-generator#pyrogram,user)
+      
 
 4. Run the bot:
     ```sh
