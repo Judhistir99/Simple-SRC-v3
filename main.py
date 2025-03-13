@@ -212,7 +212,7 @@ async def process_batch(C, m):
     
     for i in range(N):
         M = S + i
-        msg = await J(C, Y, I, M, link type)
+        msg = await J(C, Y, I, M, link_type)
         if msg:
             res = await V(C, Y, msg, Z[U]["did"], link type, U, (N, i+1))
             await pt.edit(f"{i+1}/{N}: {res}")
