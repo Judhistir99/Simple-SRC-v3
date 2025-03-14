@@ -199,10 +199,7 @@ async def usage(C, m: M):
     disk_bar = create_usage_bar(disk_usage)
 
     usage_text = (
-        f"**Resource Utilization:**\n\n"
-        f"CPU {EMOJI_MAP['cpu']}: {cpu_bar} : {cpu_usage}%\n\n"
-        f"RAM {EMOJI_MAP['memory']}: {memory_bar} : {memory_usage}%\n\n"
-        f"Disk {EMOJI_MAP['disk']}: {disk_bar} : {disk_usage}%\n"
+        f"**Resource Utilization:**\n\nCPU {EMOJI_MAP['cpu']}: {cpu_bar} : {cpu_usage}%\n\nRAM {EMOJI_MAP['memory']}: {memory_bar} : {memory_usage}%\n\nDisk {EMOJI_MAP['disk']}: {disk_bar} : {disk_usage}%\n"
     )
     
     await m.reply_text(add_emojis(usage_text))
