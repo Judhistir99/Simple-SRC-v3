@@ -5,8 +5,10 @@ import time
 from config import API_ID as A, API_HASH as H, BOT_TOKEN as T, SESSION as S
 import sys
 import psutil
+import json
 
 REBOOT_FLAG = "/app/reboot.flag"
+STATE_FILE = "/app/state.json"
 
 X, Y = C("X", api_id=A, api_hash=H, bot_token=T), C("Y", api_id=A, api_hash=H, session_string=S)
 Z, W = {}, {}
@@ -22,8 +24,17 @@ if O.path.exists(REBOOT_FLAG):
     with open(REBOOT_FLAG, "r") as f:
         chat_id = f.read().strip()
     O.remove(REBOOT_FLAG)
+    
+    # Load state from file and resume tasks
+    if O.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r") as f:
+            Z = json.load(f)
+        O.remove(STATE_FILE)
+    
     async def send_reboot_success():
-        await X.send_message(chat_id, "Rebooted successfully.")
+        await X.send_message(chat_id, "Rebooted successfully and resumed tasks.")
+        for U in Z:
+            await process_batch(X, Z[U]["message"])
     X.loop.run_until_complete(send_reboot_success())
 
 progress_cache = {}
@@ -145,7 +156,7 @@ async def sex(C, m: M):
 @X.on_message(F.command("batch"))
 async def B(C, m: M):
     U = m.from_user.id
-    Z[U] = {"step": "start"}
+    Z[U] = {"step": "start", "message": m}
     await m.reply_text(add_emojis("Send start link."))
 
 @X.on_message(F.command("cancel"))
@@ -188,6 +199,9 @@ async def restart(C, m: M):
 @X.on_message(F.command("reboot"))
 async def reboot(C, m: M):
     await m.reply_text(add_emojis("Rebooting..."))
+    # Save state to file
+    with open(STATE_FILE, "w") as f:
+        json.dump(Z, f)
     # Write the chat ID to the reboot flag file
     with open(REBOOT_FLAG, "w") as f:
         f.write(str(m.chat.id))
@@ -217,6 +231,9 @@ async def restart_callback(C, cq):
 @X.on_callback_query(F.regex(r"reboot_(\d+)"))
 async def reboot_callback(C, cq):
     await cq.answer("Rebooting...")
+    # Save state to file
+    with open(STATE_FILE, "w") as f:
+        json.dump(Z, f)
     # Write the chat ID to the reboot flag file
     with open(REBOOT_FLAG, "w") as f:
         f.write(str(cq.message.chat.id))
