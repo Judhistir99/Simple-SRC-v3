@@ -351,4 +351,29 @@ async def all_document_callback(C, cq):
 
 @X.on_callback_query(F.regex(r"use_current_chat_(\d+)"))
 async def use_current_chat_callback(C, cq):
-    U = int(cq.data.split("_
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "process", "did": cq.message.chat.id})
+
+    I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
+    R = 0
+    pt = await cq.message.reply_text("Trying hard 🐥...")
+
+    text_to_remove = read_remove_text() if Z[U].get("use_config", False) else Z[U].get("text_to_remove", "")
+    text_to_add = read_add_text() if Z[U].get("use_config", False) else Z[U].get("text_to_add", "")
+    thumbnail = O.path.join("/app", "thumbnail.jpg") if O.path.exists(O.path.join("/app", "thumbnail.jpg")) else None
+    media_type = Z[U].get("media_type", "default")
+
+    for i in range(N):
+        M = S + i
+        msg = await J(C, Y, I, M, link_type)
+        if msg:
+            send_as_document = media_type == "all_document" or (media_type == "default" and msg.document)
+            res = await V(C, Y, msg, Z[U]["did"], link_type, U, (N, i+1), text_to_remove, text_to_add, thumbnail, send_as_document)
+            await pt.edit(f"{i+1}/{N}: {res}")
+            if res and "Done" in res:
+                R += 1
+        else:
+            await cq.message.reply_text(f"{M} not found.")
+
+    await cq.message.reply_text("Batch Completed ✅")
+    del Z[U]
