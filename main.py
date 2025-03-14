@@ -189,15 +189,15 @@ async def usage(C, m: M):
     disk_usage = int(psutil.disk_usage('/').percent)  # in percentage
 
     # Create usage bars
-    cpu_bar = "🟩" * (cpu_usage // 10) + "⬜" * (10 - cpu_usage // 10)
-    memory_bar = "🟩" * (memory_usage // 10) + "⬜" * (10 - memory_usage // 10)
-    disk_bar = "🟩" * (disk_usage // 10) + "⬜" * (10 - disk_usage // 10)
+    cpu_bar = "🟩" * (cpu_usage // 10) + "🟧" * (10 - cpu_usage // 10)
+    memory_bar = "🟩" * (memory_usage // 10) + "🟧" * (10 - memory_usage // 10)
+    disk_bar = "🟩" * (disk_usage // 10) + "🟧" * (10 - disk_usage // 10)
 
     usage_text = (
         f"**Resource Utilization:**\n\n"
-        f"CPU Usage {EMOJI_MAP['cpu']}: {cpu_usage}%\n{cpu_bar}\n\n"
-        f"Memory Usage {EMOJI_MAP['memory']}: {memory_usage}%\n{memory_bar}\n\n"
-        f"Disk Usage {EMOJI_MAP['disk']}: {disk_usage}%\n{disk_bar}\n"
+        f"CPU: {EMOJI_MAP['cpu']}: {cpu_usage}%\n{cpu_bar}\n\n"
+        f"Memory: {EMOJI_MAP['memory']}: {memory_usage}%\n{memory_bar}\n\n"
+        f"Disk: {EMOJI_MAP['disk']}: {disk_usage}%\n{disk_bar}\n"
     )
     
     await m.reply_text(add_emojis(usage_text))
