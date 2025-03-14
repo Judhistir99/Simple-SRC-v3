@@ -49,26 +49,6 @@ if is_safe_path("/app", REBOOT_FLAG) and O.path.exists(REBOOT_FLAG):
 
 progress_cache = {}
 
-EMOJI_MAP = {
-    "running": "🏃‍♂️",
-    "download": "⬇️",
-    "upload": "⬆️",
-    "complete": "✅",
-    "cancel": "❌",
-    "error": "⚠️",
-    "start": "🚀",
-    "batch": "📦",
-    "process": "🔄",
-    "done": "✔️",
-    "cpu": "🖥️",
-    "memory": "💾",
-    "disk": "📀"
-}
-
-def add_emojis(text):
-    words = text.split()
-    return ' '.join([f"{word} {EMOJI_MAP.get(word.lower(), '')}".strip() for word in words])
-
 def E(L):
     Q = R.match(r"https://t\.me/c/(\d+)/(\d+)", L)
     P = R.match(r"https://t\.me/([^/]+)/(\d+)", L)
@@ -118,167 +98,184 @@ async def K(batch_progress, c, t, C, h, m, start_time):
         if p >= 100:
             progress_cache.pop(m, None)
 
-async def V(C, U, m, d, link_type, u, batch_progress):
+def read_remove_text():
+    file_path = O.path.join("config", "setremove.txt")
+    if O.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return f.read().strip()
+    return ""
+
+def read_add_text():
+    file_path = O.path.join("config", "addtext.txt")
+    if O.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return f.read().strip()
+    return ""
+
+async def V(C, U, m, d, link_type, u, batch_progress, text_to_remove=None, text_to_add=None, thumbnail=None, send_as_document=False):
     try:
         if m.media:
             st = time.time()
             if link_type == "private":
-                P = await C.send_message(d, add_emojis("Downloading..."))
+                P = await C.send_message(d, "Downloading...")
                 W[u] = {"cancel": False, "progress": P.id}
                 F = await U.download_media(m, progress=K, progress_args=(batch_progress, C, d, P.id, st))
                 
                 if W.get(u, {}).get("cancel"):
-                    await C.edit_message_text(d, P.id, add_emojis("Canceled."))
+                    await C.edit_message_text(d, P.id, "Canceled.")
                     if O.path.exists(F) and is_safe_path("/app", F): O.remove(F)
                     del W[u]
-                    return add_emojis("Canceled.")
+                    return "Canceled."
                 
                 if not F:
-                    await C.edit_message_text(d, P.id, add_emojis("Failed."))
+                    await C.edit_message_text(d, P.id, "Failed.")
                     del W[u]
-                    return add_emojis("Failed.")
+                    return "Failed."
                 
-                await C.edit_message_text(d, P.id, add_emojis("Uploading..."))
-                th = "v3.jpg"
-                if m.video:
-                    width, height, duration = m.video.width, m.video.height, m.video.duration
-                    await C.send_video(d, video=F, caption=m.caption.markdown, thumb=th, width=width, height=height, duration=duration, progress=K, progress_args=(batch_progress, C, d, P.id, st))
-                elif m.video_note: await C.send_video_note(d, video_note=F, progress=K, progress_args=(batch_progress, C, d, P.id, st))
-                elif m.voice: await C.send_voice(d, F, progress=K, progress_args=(batch_progress, C, d, P.id, st))
-                elif m.sticker: await C.send_sticker(d, m.sticker.file_id)
-                elif m.audio: await C.send_audio(d, audio=F, caption=m.caption.markdown, thumb=th, progress=K, progress_args=(batch_progress, C, d, P.id, st))
-                elif m.photo: await C.send_photo(d, photo=F, caption=m.caption.markdown, progress=K, progress_args=(batch_progress, C, d, P.id, st))
-                elif m.document: await C.send_document(d, document=F, caption=m.caption.markdown, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                await C.edit_message_text(d, P.id, "Uploading...")
+                
+                # Remove custom text from filename and caption
+                caption = m.caption.markdown if m.caption else ""
+                filename = F if not text_to_remove else F.replace(text_to_remove, "")
+                caption = caption.replace(text_to_remove, "") if text_to_remove else caption
+                
+                # Add custom text to filename and caption
+                if text_to_add:
+                    filename_parts = O.path.splitext(filename)
+                    filename = f"{filename_parts[0]}{text_to_add}{filename_parts[1]}"
+                    caption = f"{caption}{text_to_add}"
+                
+                # Use filename as caption if no caption is provided
+                if not caption:
+                    caption = O.path.basename(filename)
+
+                if send_as_document:
+                    await C.send_document(d, document=filename, caption=caption, thumb=thumbnail, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                else:
+                    if m.video:
+                        width, height, duration = m.video.width, m.video.height, m.video.duration
+                        await C.send_video(d, video=filename, caption=caption, thumb=thumbnail, width=width, height=height, duration=duration, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                    elif m.video_note:
+                        await C.send_video_note(d, video_note=filename, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                    elif m.voice:
+                        await C.send_voice(d, filename, caption=caption, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                    elif m.sticker:
+                        await C.send_sticker(d, m.sticker.file_id)
+                    elif m.audio:
+                        await C.send_audio(d, audio=filename, caption=caption, thumb=thumbnail, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                    elif m.photo:
+                        await C.send_photo(d, photo=filename, caption=caption, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                    else:
+                        await C.send_document(d, document=filename, caption=caption, thumb=thumbnail, progress=K, progress_args=(batch_progress, C, d, P.id, st))
+                        
                 if O.path.exists(F) and is_safe_path("/app", F): O.remove(F)
                 await C.delete_messages(d, P.id)
                 del W[u]
-                return add_emojis("Done.")
+                return "Done."
             else:
                 await m.copy(chat_id=d)
-                return add_emojis("Copied.")
+                return "Copied."
         elif m.text:
-            await (C.send_message(d, text=add_emojis(m.text.markdown)) if link_type == "private" else m.copy(chat_id=d))
-            return add_emojis("Sent.")
+            await (C.send_message(d, text=m.text.markdown) if link_type == "private" else m.copy(chat_id=d))
+            return "Sent."
     except Exception as e:
         return f"Error: {e}"
 
 @X.on_message(F.command("start"))
 async def sex(C, m: M):
-    await m.reply_text(add_emojis("Welcome to bot. Use /batch to start magic."))
+    await m.reply_text("Welcome to bot. Use /batch to start magic.")
 
 @X.on_message(F.command("batch"))
 async def B(C, m: M):
     U = m.from_user.id
     Z[U] = {"step": "start", "message": m}
-    await m.reply_text(add_emojis("Send start link."))
+    await m.reply_text("Send start link.")
 
 @X.on_message(F.command("cancel"))
 async def N(C, m: M):
     U = m.from_user.id
     if U in W:
         W[U]["cancel"] = True
-        await m.reply_text(add_emojis("Cancelling..."))
+        await m.reply_text("Cancelling...")
     else:
-        await m.reply_text(add_emojis("No active task."))
-
-def create_usage_bar(usage):
-    green_boxes = usage // 20
-    orange_boxes = (usage % 20) // 10
-    return "🟩" * green_boxes + "🟧" * orange_boxes + "⬜" * (5 - green_boxes - orange_boxes)
+        await m.reply_text("No active task.")
 
 @X.on_message(F.command("usage"))
 async def usage(C, m: M):
     # Fetch live system statistics
-    cpu_usage = int(psutil.cpu_percent())  # in percentage
-    memory_usage = int(psutil.virtual_memory().percent)  # in percentage
-    disk_usage = int(psutil.disk_usage('/').percent)  # in percentage
-
-    # Create usage bars
-    cpu_bar = create_usage_bar(cpu_usage)
-    memory_bar = create_usage_bar(memory_usage)
-    disk_bar = create_usage_bar(disk_usage)
+    cpu_usage = psutil.cpu_percent()  # in percentage
+    memory_usage = psutil.virtual_memory().percent  # in percentage
+    disk_usage = psutil.disk_usage('/').percent  # in percentage
 
     usage_text = (
-        f"**Resource Utilization:**\n\nCPU {EMOJI_MAP['cpu']}: {cpu_bar} : {cpu_usage}%\n\nRAM {EMOJI_MAP['memory']}: {memory_bar} : {memory_usage}%\n\nDisk {EMOJI_MAP['disk']}: {disk_bar} : {disk_usage}%\n"
+        f"**Resource Utilization:**\n\n"
+        f"CPU Usage: {cpu_usage}%\n"
+        f"Memory Usage: {memory_usage}%\n"
+        f"Disk Usage: {disk_usage}%\n"
     )
     
-    await m.reply_text(add_emojis(usage_text))
+    await m.reply_text(usage_text)
 
-@X.on_message(F.command("restart"))
-async def restart(C, m: M):
+@X.on_message(F.command("setthumbnail"))
+async def set_thumbnail(C, m: M):
+    if m.reply_to_message and m.reply_to_message.photo:
+        file_path = O.path.join("/app", "thumbnail.jpg")
+        await m.reply_to_message.download(file_path)
+        await m.reply_text("Thumbnail set successfully!")
+    else:
+        await m.reply_text("Please reply to a photo to set it as the thumbnail.")
+
+@X.on_message(F.command("removethumbnail"))
+async def remove_thumbnail(C, m: M):
+    file_path = O.path.join("/app", "thumbnail.jpg")
+    if O.path.exists(file_path):
+        O.remove(file_path)
+        await m.reply_text("Thumbnail removed successfully!")
+    else:
+        await m.reply_text("No thumbnail set.")
+
+@X.on_message(F.command("setremovetext"))
+async def set_remove_text(C, m: M):
     U = m.from_user.id
-    if U in W:
-        W[U]["cancel"] = True
-        await m.reply_text(add_emojis("Restarting..."))
-        # Reset the progress and restart the batch process
-        Z[U]["step"] = "process"
-        await process_batch(C, m)
+    text_to_remove = m.text.split(" ", 1)[1] if len(m.text.split(" ", 1)) > 1 else ""
+    if text_to_remove:
+        file_path = O.path.join("config", "setremove.txt")
+        with open(file_path, "w") as f:
+            f.write(text_to_remove)
+        await m.reply_text(f"Text to remove set: {text_to_remove}")
     else:
-        await m.reply_text(add_emojis("No active task."))
+        await m.reply_text("Please provide the text to remove.")
 
-@X.on_message(F.command("reboot"))
-async def reboot(C, m: M):
-    await m.reply_text(add_emojis("Rebooting..."))
-    # Save state to file
-    with open(STATE_FILE, "w") as f:
-        json.dump(Z, f)
-    # Write the chat ID to the reboot flag file
-    with open(REBOOT_FLAG, "w") as f:
-        f.write(str(m.chat.id))
-    O.execv(sys.executable, ['python'] + sys.argv)
-
-@X.on_callback_query(F.regex(r"cancel_(\d+)"))
-async def cancel_callback(C, cq):
-    U = cq.from_user.id
-    if U in W:
-        W[U]["cancel"] = True
-        await cq.answer("Cancelling...")
+@X.on_message(F.command("clearremovetext"))
+async def clear_remove_text(C, m: M):
+    file_path = O.path.join("config", "setremove.txt")
+    if O.path.exists(file_path):
+        O.remove(file_path)
+        await m.reply_text("Text to remove cleared.")
     else:
-        await cq.answer("No active task.")
+        await m.reply_text("No text to remove set.")
 
-@X.on_callback_query(F.regex(r"restart_(\d+)"))
-async def restart_callback(C, cq):
-    U = cq.from_user.id
-    if U in W:
-        W[U]["cancel"] = True
-        await cq.answer("Restarting...")
-        # Reset the progress and restart the batch process
-        Z[U]["step"] = "process"
-        await process_batch(C, cq.message)
+@X.on_message(F.command("setaddtext"))
+async def set_add_text(C, m: M):
+    add_text = m.text.split(" ", 1)[1] if len(m.text.split(" ", 1)) > 1 else ""
+    if add_text:
+        file_path = O.path.join("config", "addtext.txt")
+        with open(file_path, "w") as f:
+            f.write(add_text)
+        await m.reply_text(f"Text to add set: {add_text}")
     else:
-        await cq.answer("No active task.")
+        await m.reply_text("Please provide the text to add.")
 
-@X.on_callback_query(F.regex(r"reboot_(\d+)"))
-async def reboot_callback(C, cq):
-    await cq.answer("Rebooting...")
-    # Save state to file
-    with open(STATE_FILE, "w") as f:
-        json.dump(Z, f)
-    # Write the chat ID to the reboot flag file
-    with open(REBOOT_FLAG, "w") as f:
-        f.write(str(cq.message.chat.id))
-    O.execv(sys.executable, ['python'] + sys.argv)
+@X.on_message(F.command("clearaddtext"))
+async def clear_add_text(C, m: M):
+    file_path = O.path.join("config", "addtext.txt")
+    if O.path.exists(file_path):
+        O.remove(file_path)
+        await m.reply_text("Text to add cleared.")
+    else:
+        await m.reply_text("No text to add set.")
 
-async def process_batch(C, m):
-    U = m.from_user.id
-    I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
-    R = 0
-    pt = await m.reply_text(add_emojis("Trying hard 🐥..."))
-    
-    for i in range(N):
-        M = S + i
-        msg = await J(C, Y, I, M, link_type)
-        if msg:
-            res = await V(C, Y, msg, Z[U]["did"], link_type, U, (N, i+1))
-            await pt.edit(f"{i+1}/{N}: {res}")
-            if "Done" in res: R += 1
-        else:
-            await m.reply_text(f"{M} not found.")
-    
-    await m.reply_text(f"Batch Completed ✅")
-    del Z[U]
-
-@X.on_message(F.text & ~F.command(["start", "batch", "cancel", "restart", "reboot"]))
+@X.on_message(F.text & ~F.command(["start", "batch", "cancel", "usage", "setthumbnail", "removethumbnail", "setremovetext", "clearremovetext", "setaddtext", "clearaddtext"]))
 async def H(C, m: M):
     U = m.from_user.id
     if U not in Z:
@@ -288,40 +285,70 @@ async def H(C, m: M):
         L = m.text
         I, D, link_type = E(L)
         if not I or not D:
-            await m.reply_text(add_emojis("Invalid link. Please check the format."))
+            await m.reply_text("Invalid link. Please check the format.")
             del Z[U]
             return
         Z[U].update({"step": "count", "cid": I, "sid": D, "lt": link_type})
-        await m.reply_text(add_emojis("How many messages?"))
+        await m.reply_text("How many messages?")
     
     elif S == "count":
         if not m.text.isdigit():
-            await m.reply_text(add_emojis("Enter a valid number."))
+            await m.reply_text("Enter a valid number.")
             return
-        Z[U].update({"step": "dest", "num": int(m.text)})
-        await m.reply_text(add_emojis("Send destination chat ID."))
-    
-    elif S == "dest":
-        D = m.text
-        Z[U].update({"step": "process", "did": D})
-        
-        I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
-        R = 0
-        pt = await m.reply_text(add_emojis("Trying hard 🐥..."))
-        
-        for i in range(N):
-            M = S + i
-            msg = await J(C, Y, I, M, link_type)
-            if msg:
-                res = await V(C, Y, msg, D, link_type, U, (N, i+1))
-                await pt.edit(f"{i+1}/{N}: {res}")
-                if res and "Done" in res: 
-                    R += 1
-            else:
-                await m.reply_text(f"{M} not found.")
-        
-        await m.reply_text(f"Batch Completed ✅")
-        del Z[U]
+        Z[U].update({"step": "use_config", "num": int(m.text)})
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Use Config Files", callback_data=f"use_config_{U}")],
+             [InlineKeyboardButton("Enter Custom Text", callback_data=f"custom_text_{U}")]]
+        )
+        await m.reply_text("Use configuration files or enter custom text?", reply_markup=keyboard)
 
-print("Bot started successfully!!")
-X.run()
+@X.on_callback_query(F.regex(r"use_config_(\d+)"))
+async def use_config_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "set_media_type", "use_config": True})
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Default", callback_data=f"default_{U}")],
+         [InlineKeyboardButton("All Media", callback_data=f"all_media_{U}")],
+         [InlineKeyboardButton("All Document", callback_data=f"all_document_{U}")]]
+    )
+    await cq.message.reply_text("Send media as:", reply_markup=keyboard)
+
+@X.on_callback_query(F.regex(r"custom_text_(\d+)"))
+async def custom_text_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U]["step"] = "custom_text_input"
+    await cq.message.reply_text("Enter text to remove:")
+
+@X.on_callback_query(F.regex(r"default_(\d+)"))
+async def default_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "dest", "media_type": "default"})
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
+         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
+    )
+    await cq.message.reply_text("Set destination chat ID:", reply_markup=keyboard)
+
+@X.on_callback_query(F.regex(r"all_media_(\d+)"))
+async def all_media_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "dest", "media_type": "all_media"})
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
+         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
+    )
+    await cq.message.reply_text("Set destination chat ID:", reply_markup=keyboard)
+
+@X.on_callback_query(F.regex(r"all_document_(\d+)"))
+async def all_document_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "dest", "media_type": "all_document"})
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
+         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
+    )
+    await cq.message.reply_text("Set destination chat ID:", reply_markup=keyboard)
+
+@X.on_callback_query(F.regex(r"use_current_chat_(\d+)"))
+async def use_current_chat_callback(C, cq):
+    U = int(cq.data.split("_
