@@ -99,7 +99,7 @@ async def K(batch_progress, c, t, C, h, m, start_time):
         ongoing = 1 if p % 10 != 0 and p < 100 else 0
         incomplete = 10 - completed - ongoing
 
-        bar = "🟩" * completed + "🟨" * ongoing + "⬜" * incomplete
+        bar = "🟩" * completed + "🟧" * ongoing + "⬜" * incomplete
         speed = (c / (time.time() - start_time)) / (1024 * 1024) if time.time() > start_time else 0
         eta = time.strftime("%M:%S", time.gmtime((t - c) / (speed * 1024 * 1024))) if speed > 0 else "00:00"
         
@@ -181,6 +181,12 @@ async def N(C, m: M):
     else:
         await m.reply_text(add_emojis("No active task."))
 
+def create_usage_bar(usage):
+    green_boxes = usage // 20
+    orange_boxes = (usage % 20) // 10
+    white_boxes = 5 - green_boxes - orange_boxes
+    return "🟩" * green_boxes + "🟧" * orange_boxes
+
 @X.on_message(F.command("usage"))
 async def usage(C, m: M):
     # Fetch live system statistics
@@ -189,15 +195,15 @@ async def usage(C, m: M):
     disk_usage = int(psutil.disk_usage('/').percent)  # in percentage
 
     # Create usage bars
-    cpu_bar = "🟩" * (cpu_usage // 10) + "🟧" * (10 - cpu_usage // 10)
-    memory_bar = "🟩" * (memory_usage // 10) + "🟧" * (10 - memory_usage // 10)
-    disk_bar = "🟩" * (disk_usage // 10) + "🟧" * (10 - disk_usage // 10)
+    cpu_bar = create_usage_bar(cpu_usage)
+    memory_bar = create_usage_bar(memory_usage)
+    disk_bar = create_usage_bar(disk_usage)
 
     usage_text = (
         f"**Resource Utilization:**\n\n"
-        f"CPU: {EMOJI_MAP['cpu']}: {cpu_usage}%\n{cpu_bar}\n\n"
-        f"Memory: {EMOJI_MAP['memory']}: {memory_usage}%\n{memory_bar}\n\n"
-        f"Disk: {EMOJI_MAP['disk']}: {disk_usage}%\n{disk_bar}\n"
+        f"CPU {EMOJI_MAP['cpu']}: {cpu_bar} : {cpu_usage}%\n\n"
+        f"RAM {EMOJI_MAP['memory']}: {memory_bar} : {memory_usage}%\n\n"
+        f"Disk {EMOJI_MAP['disk']}: {disk_bar} : {disk_usage}%\n"
     )
     
     await m.reply_text(add_emojis(usage_text))
