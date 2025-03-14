@@ -5,6 +5,8 @@ import time
 from config import API_ID as A, API_HASH as H, BOT_TOKEN as T, SESSION as S
 import sys
 
+REBOOT_FLAG = "/app/reboot.flag"
+
 X, Y = C("X", api_id=A, api_hash=H, bot_token=T), C("Y", api_id=A, api_hash=H, session_string=S)
 Z, W = {}, {}
 try:
@@ -13,6 +15,15 @@ try:
 except Exception:
     print("check your session")
     pass
+
+# Check if reboot flag exists and send reboot success message
+if O.path.exists(REBOOT_FLAG):
+    with open(REBOOT_FLAG, "r") as f:
+        chat_id = f.read().strip()
+    O.remove(REBOOT_FLAG)
+    async def send_reboot_success():
+        await X.send_message(chat_id, "Rebooted successfully.")
+    X.loop.run_until_complete(send_reboot_success())
 
 progress_cache = {}
 
@@ -78,7 +89,7 @@ async def K(batch_progress, c, t, C, h, m, start_time):
               InlineKeyboardButton("Reboot 🔄", callback_data=f"reboot_{m}")]]
         )
 
-        await C.edit_message_text(h, m, f"__**Pyro Handler...**__\n\n{bar}\n\n📊 **__Completed__**: {p:.2f}%\n🚀 **__Speed**__: {speed:.2f} MB/s\n⏳ **__ETA**__: {eta}\n\n🔄 **Batch Progress**: {batch_bar} {batch_completed}/{batch_total}\n\n**All Set ☑️**", reply_markup=keyboard)
+        await C.edit_message_text(h, m, f"__**Pyro Handler...**__\n\n{bar}\n\n📊 **__Completed__**: {p:.2f}%\n🚀 **__Speed**__: {speed:.2f} MB/s\n⏳ **__ETA**__: {eta}\n\n🔄 **Batch Progress**: {batch_completed}/{batch_total}\n {batch_bar}\n\n**All Set ☑️**", reply_markup=keyboard)
         if p >= 100:
             progress_cache.pop(m, None)
 
@@ -176,6 +187,9 @@ async def restart(C, m: M):
 @X.on_message(F.command("reboot"))
 async def reboot(C, m: M):
     await m.reply_text(add_emojis("Rebooting..."))
+    # Write the chat ID to the reboot flag file
+    with open(REBOOT_FLAG, "w") as f:
+        f.write(str(m.chat.id))
     O.execv(sys.executable, ['python'] + sys.argv)
 
 @X.on_callback_query(F.regex(r"cancel_(\d+)"))
@@ -202,6 +216,9 @@ async def restart_callback(C, cq):
 @X.on_callback_query(F.regex(r"reboot_(\d+)"))
 async def reboot_callback(C, cq):
     await cq.answer("Rebooting...")
+    # Write the chat ID to the reboot flag file
+    with open(REBOOT_FLAG, "w") as f:
+        f.write(str(cq.message.chat.id))
     O.execv(sys.executable, ['python'] + sys.argv)
 
 async def process_batch(C, m):
@@ -270,3 +287,4 @@ async def H(C, m: M):
 
 print("Bot started successfully!!")
 X.run()
+`````
