@@ -2,4 +2,3 @@ https://www.dl.dropboxusercontent.com/scl/fi/35w0i0hnsioq63x7eumdd/pyrogagan.zip
 flask
 tgcrypto
 psutil
-matplotlib
