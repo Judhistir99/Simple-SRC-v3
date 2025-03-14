@@ -4,6 +4,7 @@ from pyrogram.types import Message as M, InlineKeyboardMarkup, InlineKeyboardBut
 import time
 from config import API_ID as A, API_HASH as H, BOT_TOKEN as T, SESSION as S
 import sys
+import psutil
 
 REBOOT_FLAG = "/app/reboot.flag"
 
@@ -158,10 +159,10 @@ async def N(C, m: M):
 
 @X.on_message(F.command("usage"))
 async def usage(C, m: M):
-    # Sample data for resource utilization
-    cpu_usage = 50  # in percentage
-    memory_usage = 1024  # in MB
-    disk_usage = 2048  # in MB
+    # Fetch live system statistics
+    cpu_usage = psutil.cpu_percent()  # in percentage
+    memory_usage = psutil.virtual_memory().used // (1024 * 1024)  # in MB
+    disk_usage = psutil.disk_usage('/').used // (1024 * 1024)  # in MB
 
     usage_text = (
         f"**Resource Utilization:**\n"
