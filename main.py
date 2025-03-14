@@ -184,8 +184,7 @@ async def N(C, m: M):
 def create_usage_bar(usage):
     green_boxes = usage // 20
     orange_boxes = (usage % 20) // 10
-    white_boxes = 5 - green_boxes - orange_boxes
-    return "🟩" * green_boxes + "🟧" * orange_boxes
+    return "🟩" * green_boxes + "🟧" * orange_boxes + "⬜" * (5 - green_boxes - orange_boxes)
 
 @X.on_message(F.command("usage"))
 async def usage(C, m: M):
