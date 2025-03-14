@@ -184,9 +184,9 @@ async def N(C, m: M):
 @X.on_message(F.command("usage"))
 async def usage(C, m: M):
     # Fetch live system statistics
-    cpu_usage = psutil.cpu_percent()  # in percentage
-    memory_usage = psutil.virtual_memory().percent  # in percentage
-    disk_usage = psutil.disk_usage('/').percent  # in percentage
+    cpu_usage = int(psutil.cpu_percent())  # in percentage
+    memory_usage = int(psutil.virtual_memory().percent)  # in percentage
+    disk_usage = int(psutil.disk_usage('/').percent)  # in percentage
 
     # Create usage bars
     cpu_bar = "🟩" * (cpu_usage // 10) + "🟥" * (10 - cpu_usage // 10)
