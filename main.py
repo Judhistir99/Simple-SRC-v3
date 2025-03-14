@@ -89,7 +89,7 @@ async def K(batch_progress, c, t, C, h, m, start_time):
               InlineKeyboardButton("Reboot 🔄", callback_data=f"reboot_{m}")]]
         )
 
-        await C.edit_message_text(h, m, f"__**Pyro Handler...**__\n\n{bar}\n\n📊 **__Completed__**: {p:.2f}%\n🚀 **__Speed**__: {speed:.2f} MB/s\n⏳ **__ETA**__: {eta}\n\n🔄 **Batch Progress**: {batch_completed}/{batch_total}\n {batch_bar}\n\n**All Set ☑️**", reply_markup=keyboard)
+        await C.edit_message_text(h, m, f"__**Pyro Handler...**__\n\n{bar}\n\n📊 **__Completed__**: {p:.2f}%\n🚀 **__Speed**__: {speed:.2f} MB/s\n⏳ **__ETA**__: {eta}\n\n🔄 **Batch Progress**: {batch_bar}")
         if p >= 100:
             progress_cache.pop(m, None)
 
@@ -287,4 +287,3 @@ async def H(C, m: M):
 
 print("Bot started successfully!!")
 X.run()
-`````
