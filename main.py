@@ -6,12 +6,16 @@ from config import API_ID as A, API_HASH as H, BOT_TOKEN as T, SESSION as S
 import sys
 import psutil
 import json
-import matplotlib.pyplot as plt
 
 REBOOT_FLAG = "/app/reboot.flag"
 STATE_FILE = "/app/state.json"
 
-X, Y = C("X", api_id=A, api_hash=H, bot_token=T), C("Y", api_id=A, api_hash=H, session_string=S)
+API_ID = O.getenv("API_ID")
+API_HASH = O.getenv("API_HASH")
+BOT_TOKEN = O.getenv("BOT_TOKEN")
+SESSION = O.getenv("SESSION")
+
+X, Y = C("X", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN), C("Y", api_id=API_ID, api_hash=API_HASH, session_string=SESSION)
 Z, W = {}, {}
 try:
     Y.start()
@@ -20,14 +24,19 @@ except Exception:
     print("check your session")
     pass
 
+def is_safe_path(basedir, path, follow_symlinks=True):
+    if follow_symlinks:
+        return O.path.realpath(path).startswith(basedir)
+    return O.path.abspath(path).startswith(basedir)
+
 # Check if reboot flag exists and send reboot success message
-if O.path.exists(REBOOT_FLAG):
+if is_safe_path("/app", REBOOT_FLAG) and O.path.exists(REBOOT_FLAG):
     with open(REBOOT_FLAG, "r") as f:
         chat_id = f.read().strip()
     O.remove(REBOOT_FLAG)
     
     # Load state from file and resume tasks
-    if O.path.exists(STATE_FILE):
+    if is_safe_path("/app", STATE_FILE) and O.path.exists(STATE_FILE):
         with open(STATE_FILE, "r") as f:
             Z = json.load(f)
         O.remove(STATE_FILE)
@@ -50,7 +59,10 @@ EMOJI_MAP = {
     "start": "🚀",
     "batch": "📦",
     "process": "🔄",
-    "done": "✔️"
+    "done": "✔️",
+    "cpu": "🖥️",
+    "memory": "💾",
+    "disk": "📀"
 }
 
 def add_emojis(text):
@@ -117,7 +129,7 @@ async def V(C, U, m, d, link_type, u, batch_progress):
                 
                 if W.get(u, {}).get("cancel"):
                     await C.edit_message_text(d, P.id, add_emojis("Canceled."))
-                    if O.path.exists(F): O.remove(F)
+                    if O.path.exists(F) and is_safe_path("/app", F): O.remove(F)
                     del W[u]
                     return add_emojis("Canceled.")
                 
@@ -137,7 +149,7 @@ async def V(C, U, m, d, link_type, u, batch_progress):
                 elif m.audio: await C.send_audio(d, audio=F, caption=m.caption.markdown, thumb=th, progress=K, progress_args=(batch_progress, C, d, P.id, st))
                 elif m.photo: await C.send_photo(d, photo=F, caption=m.caption.markdown, progress=K, progress_args=(batch_progress, C, d, P.id, st))
                 elif m.document: await C.send_document(d, document=F, caption=m.caption.markdown, progress=K, progress_args=(batch_progress, C, d, P.id, st))
-                O.remove(F)
+                if O.path.exists(F) and is_safe_path("/app", F): O.remove(F)
                 await C.delete_messages(d, P.id)
                 del W[u]
                 return add_emojis("Done.")
@@ -173,24 +185,22 @@ async def N(C, m: M):
 async def usage(C, m: M):
     # Fetch live system statistics
     cpu_usage = psutil.cpu_percent()  # in percentage
-    memory_usage = psutil.virtual_memory().used // (1024 * 1024)  # in MB
-    disk_usage = psutil.disk_usage('/').used // (1024 * 1024)  # in MB
+    memory_usage = psutil.virtual_memory().percent  # in percentage
+    disk_usage = psutil.disk_usage('/').percent  # in percentage
 
-    # Create bar chart
-    labels = ['CPU Usage', 'Memory Usage', 'Disk Usage']
-    values = [cpu_usage, memory_usage, disk_usage]
-    colors = ['#FF9999', '#66B2FF', '#99FF99']
+    # Create usage bars
+    cpu_bar = "🟩" * (cpu_usage // 10) + "🟥" * (10 - cpu_usage // 10)
+    memory_bar = "🟩" * (memory_usage // 10) + "🟥" * (10 - memory_usage // 10)
+    disk_bar = "🟩" * (disk_usage // 10) + "🟥" * (10 - disk_usage // 10)
 
-    plt.figure(figsize=(8, 5))
-    plt.bar(labels, values, color=colors)
-    plt.xlabel('Resource')
-    plt.ylabel('Usage')
-    plt.title('System Resource Usage')
-    plt.savefig('/app/usage.png')
-    plt.close()
-
-    # Send bar chart as image
-    await C.send_photo(m.chat.id, '/app/usage.png', caption=add_emojis("**Resource Utilization:**"))
+    usage_text = (
+        f"**Resource Utilization:**\n\n"
+        f"CPU Usage {EMOJI_MAP['cpu']}: {cpu_usage}%\n{cpu_bar}\n\n"
+        f"Memory Usage {EMOJI_MAP['memory']}: {memory_usage}%\n{memory_bar}\n\n"
+        f"Disk Usage {EMOJI_MAP['disk']}: {disk_usage}%\n{disk_bar}\n"
+    )
+    
+    await m.reply_text(add_emojis(usage_text))
 
 @X.on_message(F.command("restart"))
 async def restart(C, m: M):
