@@ -231,12 +231,12 @@ async def H(C, m: M):
     S = Z[U].get("step")
     if S == "start":
         L = m.text
-        I, D, link type = E(L)
+        I, D, link_type = E(L)
         if not I or not D:
             await m.reply_text(add_emojis("Invalid link. Please check the format."))
             del Z[U]
             return
-        Z[U].update({"step": "count", "cid": I, "sid": D, "lt": link type})
+        Z[U].update({"step": "count", "cid": I, "sid": D, "lt": link_type})
         await m.reply_text(add_emojis("How many messages?"))
     
     elif S == "count":
@@ -250,15 +250,15 @@ async def H(C, m: M):
         D = m.text
         Z[U].update({"step": "process", "did": D})
         
-        I, S, N, link type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
+        I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
         R = 0
         pt = await m.reply_text(add_emojis("Trying hard 🐥..."))
         
         for i in range(N):
             M = S + i
-            msg = await J(C, Y, I, M, link type)
+            msg = await J(C, Y, I, M, link_type)
             if msg:
-                res = await V(C, Y, msg, D, link type, U, (N, i+1))
+                res = await V(C, Y, msg, D, link_type, U, (N, i+1))
                 await pt.edit(f"{i+1}/{N}: {res}")
                 if res and "Done" in res: 
                     R += 1
