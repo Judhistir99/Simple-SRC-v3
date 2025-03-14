@@ -6,6 +6,7 @@ from config import API_ID as A, API_HASH as H, BOT_TOKEN as T, SESSION as S
 import sys
 import psutil
 import json
+import matplotlib.pyplot as plt
 
 REBOOT_FLAG = "/app/reboot.flag"
 STATE_FILE = "/app/state.json"
@@ -175,14 +176,21 @@ async def usage(C, m: M):
     memory_usage = psutil.virtual_memory().used // (1024 * 1024)  # in MB
     disk_usage = psutil.disk_usage('/').used // (1024 * 1024)  # in MB
 
-    usage_text = (
-        f"**Resource Utilization:**\n"
-        f"CPU Usage: {cpu_usage}%\n"
-        f"Memory Usage: {memory_usage} MB\n"
-        f"Disk Usage: {disk_usage} MB\n"
-    )
-    
-    await m.reply_text(add_emojis(usage_text))
+    # Create bar chart
+    labels = ['CPU Usage', 'Memory Usage', 'Disk Usage']
+    values = [cpu_usage, memory_usage, disk_usage]
+    colors = ['#FF9999', '#66B2FF', '#99FF99']
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(labels, values, color=colors)
+    plt.xlabel('Resource')
+    plt.ylabel('Usage')
+    plt.title('System Resource Usage')
+    plt.savefig('/app/usage.png')
+    plt.close()
+
+    # Send bar chart as image
+    await C.send_photo(m.chat.id, '/app/usage.png', caption=add_emojis("**Resource Utilization:**"))
 
 @X.on_message(F.command("restart"))
 async def restart(C, m: M):
