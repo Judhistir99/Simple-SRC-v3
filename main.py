@@ -99,14 +99,14 @@ async def K(batch_progress, c, t, C, h, m, start_time):
         ongoing = 1 if p % 10 != 0 and p < 100 else 0
         incomplete = 10 - completed - ongoing
 
-        bar = "🟩" * completed + "🟨" * ongoing + "🟥" * incomplete
+        bar = "🟩" * completed + "🟨" * ongoing + "⬜" * incomplete
         speed = (c / (time.time() - start_time)) / (1024 * 1024) if time.time() > start_time else 0
         eta = time.strftime("%M:%S", time.gmtime((t - c) / (speed * 1024 * 1024))) if speed > 0 else "00:00"
         
         # Batch progress bar
         batch_total, batch_completed = batch_progress
         batch_p = (batch_completed / batch_total) * 100
-        batch_bar = "🟩" * (int(batch_p / 10)) + "🟥" * (10 - int(batch_p / 10))
+        batch_bar = "🟩" * (int(batch_p / 10)) + "⬜" * (10 - int(batch_p / 10))
 
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Cancel ❌", callback_data=f"cancel_{m}"),
@@ -189,9 +189,9 @@ async def usage(C, m: M):
     disk_usage = int(psutil.disk_usage('/').percent)  # in percentage
 
     # Create usage bars
-    cpu_bar = "🟩" * (cpu_usage // 10) + "🟥" * (10 - cpu_usage // 10)
-    memory_bar = "🟩" * (memory_usage // 10) + "🟥" * (10 - memory_usage // 10)
-    disk_bar = "🟩" * (disk_usage // 10) + "🟥" * (10 - disk_usage // 10)
+    cpu_bar = "🟩" * (cpu_usage // 10) + "⬜" * (10 - cpu_usage // 10)
+    memory_bar = "🟩" * (memory_usage // 10) + "⬜" * (10 - memory_usage // 10)
+    disk_bar = "🟩" * (disk_usage // 10) + "⬜" * (10 - disk_usage // 10)
 
     usage_text = (
         f"**Resource Utilization:**\n\n"
