@@ -275,11 +275,16 @@ async def enter_chat_id_callback(C, cq):
 @X.on_callback_query(F.regex(r"use_current_chat_(\d+)"))
 async def use_current_chat_callback(C, cq):
     U = int(cq.data.split("_")[-1])
+    if U not in Z:
+        Z[U] = {"step": "process", "message": cq.message, "cid": None, "sid": None, "num": None, "lt": None}
     Z[U].update({"step": "process", "did": cq.message.chat.id})
     await process_batch(C, cq.message)
 
 async def process_batch(C, m: M):
     U = m.from_user.id
+    if U not in Z:
+        await m.reply_text("No batch configuration found. Please start a new batch.")
+        return
     I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
     D = Z[U]["did"]
     R = 0
