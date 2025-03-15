@@ -1,0 +1,6 @@
+# This file contains text values that should be removed
+# Each line represents a different value to be removed
+
+remove_this_text
+another_text_to_remove
+yet_another_removal
