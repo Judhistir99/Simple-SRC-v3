@@ -6,6 +6,8 @@ from config import API_ID as A, API_HASH as H, BOT_TOKEN as T, SESSION as S
 import sys
 import psutil
 import json
+from functions import is_safe_path, read_remove_text, read_add_text, set_thumbnail, remove_thumbnail, set_remove_text, clear_remove_text, set_add_text, clear_add_text
+from progress_bar import K
 
 REBOOT_FLAG = "/app/reboot.flag"
 STATE_FILE = "/app/state.json"
@@ -23,11 +25,6 @@ try:
 except Exception:
     print("check your session")
     pass
-
-def is_safe_path(basedir, path, follow_symlinks=True):
-    if follow_symlinks:
-        return O.path.realpath(path).startswith(basedir)
-    return O.path.abspath(path).startswith(basedir)
 
 # Check if reboot flag exists and send reboot success message
 if is_safe_path("/app", REBOOT_FLAG) and O.path.exists(REBOOT_FLAG):
@@ -47,8 +44,6 @@ if is_safe_path("/app", REBOOT_FLAG) and O.path.exists(REBOOT_FLAG):
             await process_batch(X, Z[U]["message"])
     X.loop.run_until_complete(send_reboot_success())
 
-progress_cache = {}
-
 def E(L):
     Q = R.match(r"https://t\.me/c/(\d+)/(\d+)", L)
     P = R.match(r"https://t\.me/([^/]+)/(\d+)", L)
@@ -67,50 +62,6 @@ async def J(C, U, I, D, link_type):
     except Exception as e:
         print(f"Error fetching message: {e}")
         return None
-
-async def K(batch_progress, c, t, C, h, m, start_time):
-    global progress_cache
-    p = (c / t) * 100
-    step = int(p // 10) * 10
-
-    if m not in progress_cache or progress_cache[m] != step or p >= 100:
-        progress_cache[m] = step
-        completed = int(p // 10)
-        ongoing = 1 if p % 10 != 0 and p < 100 else 0
-        incomplete = 10 - completed - ongoing
-
-        bar = "🟩" * completed + "🟧" * ongoing + "⬜" * incomplete
-        speed = (c / (time.time() - start_time)) / (1024 * 1024) if time.time() > start_time else 0
-        eta = time.strftime("%M:%S", time.gmtime((t - c) / (speed * 1024 * 1024))) if speed > 0 else "00:00"
-        
-        # Batch progress bar
-        batch_total, batch_completed = batch_progress
-        batch_p = (batch_completed / batch_total) * 100
-        batch_bar = "🟩" * (int(batch_p / 10)) + "⬜" * (10 - int(batch_p / 10))
-
-        keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Cancel ❌", callback_data=f"cancel_{m}"),
-              InlineKeyboardButton("Restart 🔄", callback_data=f"restart_{m}"),
-              InlineKeyboardButton("Reboot 🔄", callback_data=f"reboot_{m}")]]
-        )
-
-        await C.edit_message_text(h, m, f"__**Pyro Handler...**__\n\n{bar}\n\n📊 **__Completed__**: {p:.2f}%\n🚀 **__Speed**__: {speed:.2f} MB/s\n⏳ **__ETA**__: {eta}\n\n🔄 **Batch Progress**: {batch_bar}")
-        if p >= 100:
-            progress_cache.pop(m, None)
-
-def read_remove_text():
-    file_path = O.path.join("config", "setremove.txt")
-    if O.path.exists(file_path):
-        with open(file_path, "r") as f:
-            return f.read().strip()
-    return ""
-
-def read_add_text():
-    file_path = O.path.join("config", "addtext.txt")
-    if O.path.exists(file_path):
-        with open(file_path, "r") as f:
-            return f.read().strip()
-    return ""
 
 async def V(C, U, m, d, link_type, u, batch_progress, text_to_remove=None, text_to_add=None, thumbnail=None, send_as_document=False):
     try:
@@ -217,63 +168,28 @@ async def usage(C, m: M):
     await m.reply_text(usage_text)
 
 @X.on_message(F.command("setthumbnail"))
-async def set_thumbnail(C, m: M):
-    if m.reply_to_message and m.reply_to_message.photo:
-        file_path = O.path.join("/app", "thumbnail.jpg")
-        await m.reply_to_message.download(file_path)
-        await m.reply_text("Thumbnail set successfully!")
-    else:
-        await m.reply_text("Please reply to a photo to set it as the thumbnail.")
+async def set_thumbnail_command(C, m: M):
+    await set_thumbnail(C, m)
 
 @X.on_message(F.command("removethumbnail"))
-async def remove_thumbnail(C, m: M):
-    file_path = O.path.join("/app", "thumbnail.jpg")
-    if O.path.exists(file_path):
-        O.remove(file_path)
-        await m.reply_text("Thumbnail removed successfully!")
-    else:
-        await m.reply_text("No thumbnail set.")
+async def remove_thumbnail_command(C, m: M):
+    await remove_thumbnail(C, m)
 
 @X.on_message(F.command("setremovetext"))
-async def set_remove_text(C, m: M):
-    U = m.from_user.id
-    text_to_remove = m.text.split(" ", 1)[1] if len(m.text.split(" ", 1)) > 1 else ""
-    if text_to_remove:
-        file_path = O.path.join("config", "setremove.txt")
-        with open(file_path, "w") as f:
-            f.write(text_to_remove)
-        await m.reply_text(f"Text to remove set: {text_to_remove}")
-    else:
-        await m.reply_text("Please provide the text to remove.")
+async def set_remove_text_command(C, m: M):
+    await set_remove_text(C, m)
 
 @X.on_message(F.command("clearremovetext"))
-async def clear_remove_text(C, m: M):
-    file_path = O.path.join("config", "setremove.txt")
-    if O.path.exists(file_path):
-        O.remove(file_path)
-        await m.reply_text("Text to remove cleared.")
-    else:
-        await m.reply_text("No text to remove set.")
+async def clear_remove_text_command(C, m: M):
+    await clear_remove_text(C, m)
 
 @X.on_message(F.command("setaddtext"))
-async def set_add_text(C, m: M):
-    add_text = m.text.split(" ", 1)[1] if len(m.text.split(" ", 1)) > 1 else ""
-    if add_text:
-        file_path = O.path.join("config", "addtext.txt")
-        with open(file_path, "w") as f:
-            f.write(add_text)
-        await m.reply_text(f"Text to add set: {add_text}")
-    else:
-        await m.reply_text("Please provide the text to add.")
+async def set_add_text_command(C, m: M):
+    await set_add_text(C, m)
 
 @X.on_message(F.command("clearaddtext"))
-async def clear_add_text(C, m: M):
-    file_path = O.path.join("config", "addtext.txt")
-    if O.path.exists(file_path):
-        O.remove(file_path)
-        await m.reply_text("Text to add cleared.")
-    else:
-        await m.reply_text("No text to add set.")
+async def clear_add_text_command(C, m: M):
+    await clear_add_text(C, m)
 
 @X.on_message(F.text & ~F.command(["start", "batch", "cancel", "usage", "setthumbnail", "removethumbnail", "setremovetext", "clearremovetext", "setaddtext", "clearaddtext"]))
 async def H(C, m: M):
@@ -345,35 +261,4 @@ async def all_document_callback(C, cq):
     Z[U].update({"step": "dest", "media_type": "all_document"})
     keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
-         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
-    )
-    await cq.message.reply_text("Set destination chat ID:", reply_markup=keyboard)
-
-@X.on_callback_query(F.regex(r"use_current_chat_(\d+)"))
-async def use_current_chat_callback(C, cq):
-    U = int(cq.data.split("_")[-1])
-    Z[U].update({"step": "process", "did": cq.message.chat.id})
-
-    I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
-    R = 0
-    pt = await cq.message.reply_text("Trying hard 🐥...")
-
-    text_to_remove = read_remove_text() if Z[U].get("use_config", False) else Z[U].get("text_to_remove", "")
-    text_to_add = read_add_text() if Z[U].get("use_config", False) else Z[U].get("text_to_add", "")
-    thumbnail = O.path.join("/app", "thumbnail.jpg") if O.path.exists(O.path.join("/app", "thumbnail.jpg")) else None
-    media_type = Z[U].get("media_type", "default")
-
-    for i in range(N):
-        M = S + i
-        msg = await J(C, Y, I, M, link_type)
-        if msg:
-            send_as_document = media_type == "all_document" or (media_type == "default" and msg.document)
-            res = await V(C, Y, msg, Z[U]["did"], link_type, U, (N, i+1), text_to_remove, text_to_add, thumbnail, send_as_document)
-            await pt.edit(f"{i+1}/{N}: {res}")
-            if res and "Done" in res:
-                R += 1
-        else:
-            await cq.message.reply_text(f"{M} not found.")
-
-    await cq.message.reply_text("Batch Completed ✅")
-    del Z[U]
+         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{
