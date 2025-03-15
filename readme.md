@@ -1,18 +1,15 @@
 # JSimpleSRCv3
 
-Simplest Save Restricted Content Bot for self use.
+Simplest Save Restricted Content Bot for self-use.
 
-This branch is further edited version please use master branch for original code with minimal changes for original code check 
-
-'''
-https://github.com/devgaganin/Simple-SRC-v3
-'''
+This branch is a further edited version. Please use the master branch for the original code with minimal changes. For the original code, check:
+[Original Code Repository](https://github.com/devgaganin/Simple-SRC-v3)
 
 ## Description
 
 This bot helps you save restricted content from Telegram channels and chats. It works with both private and public links and can handle various media types including videos, photos, documents, and more.
 
-## Features extra + original
+## Features (Extra + Original)
 
 - Save media from both private and public Telegram channels.
 - Supports video, audio, photo, document, sticker, and more.
@@ -40,7 +37,7 @@ This bot helps you save restricted content from Telegram channels and chats. It 
     BOT_TOKEN = 'your_bot_token'
     SESSION = 'your_session_string'
     ```
-- [Pyrogram Session Generator](https://telegram.tools/session-string-generator#pyrogram,user)
+    - [Pyrogram Session Generator](https://telegram.tools/session-string-generator)
   
 4. Run the bot:
     ```sh
@@ -49,7 +46,7 @@ This bot helps you save restricted content from Telegram channels and chats. It 
 
 ## Usage
 
-### Commands extra + original 
+### Commands (Extra + Original)
 
 - `/start`: Welcome message and initial instructions.
 - `/batch`: Start the batch process by sending the start link.
@@ -79,7 +76,7 @@ __**Pyro Handler...**__
 
 ## Contributing
 
-Feel free to contribute to this project by submitting a pull request or opening an issue, And Set ☑️
+Feel free to contribute to this project by submitting a pull request or opening an issue.
 
 ## License
 
