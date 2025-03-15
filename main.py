@@ -191,13 +191,39 @@ async def set_add_text_command(C, m: M):
 async def clear_add_text_command(C, m: M):
     await clear_add_text(C, m)
 
-@X.on_message(F.text & ~F.command(["start", "batch", "cancel", "usage", "setthumbnail", "removethumbnail", "setremovetext", "clearremovetext", "setaddtext", "clearaddtext"]))
+
+@X.on_callback_query(F.regex(r"use_config_(\d+)"))
+async def use_config_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "set_media_type", "use_config": True})
+    keyboard @X.on_message(F.text & ~F.command(["start", "batch", "cancel", "usage", "setthumbnail", "removethumbnail", "setremovetext", "clearremovetext", "setaddtext", "clearaddtext"]))
 async def H(C, m: M):
     U = m.from_user.id
     if U not in Z:
         return
     S = Z[U].get("step")
-    if S == "start":
+    if S == "dest_input":
+        dest_chat_id = m.text
+        Z[U].update({"step": "process", "did": dest_chat_id})
+        await process_batch(C, m)
+    elif S == "custom_text_input":
+        if m.text.startswith("#remove "):
+            text_to_remove = m.text[len("#remove "):]
+            Z[U]["text_to_remove"] = text_to_remove
+            await m.reply_text(f"Text to remove set: {text_to_remove}")
+        elif m.text.startswith("#add "):
+            text_to_add = m.text[len("#add "):]
+            Z[U]["text_to_add"] = text_to_add
+            await m.reply_text(f"Text to add set: {text_to_add}")
+        else:
+            await m.reply_text("Invalid format. Use #remove <text> to set text to remove or #add <text> to set text to add.")
+        Z[U]["step"] = "dest"
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
+             [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
+        )
+        await m.reply_text("Set destination chat ID:", reply_markup=keyboard)
+    elif S == "start":
         L = m.text
         I, D, link_type = E(L)
         if not I or not D:
@@ -216,13 +242,7 @@ async def H(C, m: M):
             [[InlineKeyboardButton("Use Config Files", callback_data=f"use_config_{U}")],
              [InlineKeyboardButton("Enter Custom Text", callback_data=f"custom_text_{U}")]]
         )
-        await m.reply_text("Use configuration files or enter custom text?", reply_markup=keyboard)
-
-@X.on_callback_query(F.regex(r"use_config_(\d+)"))
-async def use_config_callback(C, cq):
-    U = int(cq.data.split("_")[-1])
-    Z[U].update({"step": "set_media_type", "use_config": True})
-    keyboard = InlineKeyboardMarkup(
+        await m.reply_text("Use configuration files or enter custom text?", reply_markup=keyboard)= InlineKeyboardMarkup(
         [[InlineKeyboardButton("Default", callback_data=f"default_{U}")],
          [InlineKeyboardButton("All Media", callback_data=f"all_media_{U}")],
          [InlineKeyboardButton("All Document", callback_data=f"all_document_{U}")]]
