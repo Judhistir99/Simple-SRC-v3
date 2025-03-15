@@ -261,4 +261,43 @@ async def all_document_callback(C, cq):
     Z[U].update({"step": "dest", "media_type": "all_document"})
     keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
-         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{
+         [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
+    )
+    await cq.message.reply_text("Set destination chat ID:", reply_markup=keyboard)
+
+# Continue processing after fixing the unterminated string literal
+@X.on_callback_query(F.regex(r"enter_chat_id_(\d+)"))
+async def enter_chat_id_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U]["step"] = "dest_input"
+    await cq.message.reply_text("Enter the destination chat ID manually:")
+
+@X.on_callback_query(F.regex(r"use_current_chat_(\d+)"))
+async def use_current_chat_callback(C, cq):
+    U = int(cq.data.split("_")[-1])
+    Z[U].update({"step": "process", "did": cq.message.chat.id})
+    await process_batch(C, cq.message)
+
+async def process_batch(C, m: M):
+    U = m.from_user.id
+    I, S, N, link_type = Z[U]["cid"], Z[U]["sid"], Z[U]["num"], Z[U]["lt"]
+    D = Z[U]["did"]
+    R = 0
+    pt = await m.reply_text("Trying hard 🐥...")
+    
+    for i in range(N):
+        M = S + i
+        msg = await J(C, Y, I, M, link_type)
+        if msg:
+            res = await V(C, Y, msg, D, link_type, U)
+            await pt.edit(f"{i+1}/{N}: {res}")
+            if res and "Done" in res: 
+                R += 1
+        else:
+            await m.reply_text(f"{M} not found.")
+    
+    await m.reply_text(f"Batch Completed ✅")
+    del Z[U]
+
+print("Bot started successfully!!")
+X.run()
