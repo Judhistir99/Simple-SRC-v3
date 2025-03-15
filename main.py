@@ -233,7 +233,7 @@ async def use_config_callback(C, cq):
 async def custom_text_callback(C, cq):
     U = int(cq.data.split("_")[-1])
     Z[U]["step"] = "custom_text_input"
-    await cq.message.reply_text("Enter text to remove:")
+    await cq.message.reply_text("Enter text to remove (format: #remove <text>) or text to add (format: #add <text>):")
 
 @X.on_callback_query(F.regex(r"default_(\d+)"))
 async def default_callback(C, cq):
@@ -280,6 +280,50 @@ async def use_current_chat_callback(C, cq):
     Z[U].update({"step": "process", "did": cq.message.chat.id})
     await process_batch(C, cq.message)
 
+@X.on_message(F.text & ~F.command(["start", "batch", "cancel", "usage", "setthumbnail", "removethumbnail", "setremovetext", "clearremovetext", "setaddtext", "clearaddtext"]))
+async def H(C, m: M):
+    U = m.from_user.id
+    if U not in Z:
+        return
+    S = Z[U].get("step")
+    if S == "custom_text_input":
+        if m.text.startswith("#remove "):
+            text_to_remove = m.text[len("#remove "):]
+            Z[U]["text_to_remove"] = text_to_remove
+            await m.reply_text(f"Text to remove set: {text_to_remove}")
+        elif m.text.startswith("#add "):
+            text_to_add = m.text[len("#add "):]
+            Z[U]["text_to_add"] = text_to_add
+            await m.reply_text(f"Text to add set: {text_to_add}")
+        else:
+            await m.reply_text("Invalid format. Use #remove <text> to set text to remove or #add <text> to set text to add.")
+        Z[U]["step"] = "dest"
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Use Current Chat", callback_data=f"use_current_chat_{U}")],
+             [InlineKeyboardButton("Enter Chat ID Manually", callback_data=f"enter_chat_id_{U}")]]
+        )
+        await m.reply_text("Set destination chat ID:", reply_markup=keyboard)
+    elif S == "start":
+        L = m.text
+        I, D, link_type = E(L)
+        if not I or not D:
+            await m.reply_text("Invalid link. Please check the format.")
+            del Z[U]
+            return
+        Z[U].update({"step": "count", "cid": I, "sid": D, "lt": link_type})
+        await m.reply_text("How many messages?")
+    
+    elif S == "count":
+        if not m.text.isdigit():
+            await m.reply_text("Enter a valid number.")
+            return
+        Z[U].update({"step": "use_config", "num": int(m.text)})
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Use Config Files", callback_data=f"use_config_{U}")],
+             [InlineKeyboardButton("Enter Custom Text", callback_data=f"custom_text_{U}")]]
+        )
+        await m.reply_text("Use configuration files or enter custom text?", reply_markup=keyboard)
+
 async def process_batch(C, m: M):
     U = m.from_user.id
     if U not in Z:
@@ -290,11 +334,14 @@ async def process_batch(C, m: M):
     R = 0
     pt = await m.reply_text("Trying hard 🐥...")
     
+    text_to_remove = Z[U].get("text_to_remove")
+    text_to_add = Z[U].get("text_to_add")
+    
     for i in range(N):
         M = S + i
         msg = await J(C, Y, I, M, link_type)
         if msg:
-            res = await V(C, Y, msg, D, link_type, U)
+            res = await V(C, Y, msg, D, link_type, U, (N, i + 1), text_to_remove, text_to_add)
             await pt.edit(f"{i+1}/{N}: {res}")
             if res and "Done" in res: 
                 R += 1
