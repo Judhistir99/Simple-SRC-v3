@@ -1,6 +1,5 @@
 # This file contains text values that should be added
 # Each line represents a different value to be added
 
-_add_this_text
-_another_text_to_add
-_yet_another_addition
+@MCS4U3
+@MCS4U4
